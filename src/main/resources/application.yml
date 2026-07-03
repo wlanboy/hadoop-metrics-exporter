@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: hadoop-metrics-exporter
+
+server:
+  port: 9123
+  address: 0.0.0.0
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+# Exporter configuration.
+# Mirrors the "jmx:" section of the original Python hadoop_exporter config.yaml:
+# a list of clusters, each with a map of service name -> list of JMX urls.
+# Supported service names: namenode, datanode, journalnode, resourcemanager, nodemanager, hiveserver2
+#exporter:
+#  cluster-name: hadoop_cluster
+#  path: /metrics
+  # metrics-dir: /exporter/metrics   # optional: override the classpath metrics/*.yaml rule directory
+#  jmx: []
+    # - cluster: hadoop_prod
+    #   services:
+    #     namenode:
+    #       - http://nn1:9870/jmx
+    #     datanode:
+    #       - http://dn1:9864/jmx
+    #       - http://dn2:9864/jmx
+    #     resourcemanager:
+    #       - http://rm1:8088/jmx
+    #     nodemanager:
+    #       - http://nm1:8042/jmx
+    #     hiveserver2:
+    #       - http://hs2:10002/jmx
