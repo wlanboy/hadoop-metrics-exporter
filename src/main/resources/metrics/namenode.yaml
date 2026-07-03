@@ -28,13 +28,13 @@ rules:
       labels:
         type: $3
 
-    - pattern: ^(TotalLoad|BlocksTotal|FilesTotal|TotalSyncCount|NumActiveClients|NumFilesUnderConstruction|NumStaleStorages)$
+    - pattern: ^(TotalLoad|BlocksTotal|FilesTotal|TotalSyncCount|NumActiveClients|NumFilesUnderConstruction|NumStaleStorages|ExpiredHeartbeats|LockQueueLength|StaleDataNodes)$
       type: GAUSE
       name: $1
       labels:
         type: $2
-    
-    - pattern: ^(Transactions\w+|Last\w+)$
+
+    - pattern: ^(Transactions\w+|Last\w+|MillisSinceLastLoadedEdits)$
       type: GAUSE
       name: $1
       labels:
@@ -65,7 +65,7 @@ rules:
       labels:
         type: $2
 
-    - pattern: ^(TotalLoad|BlocksTotal|FilesTotal|TotalSyncCount|VolumeFailuresTotal|EstimatedCapacityLostTotal)$
+    - pattern: ^(TotalLoad|BlocksTotal|FilesTotal|TotalSyncCount|VolumeFailuresTotal|EstimatedCapacityLostTotal|NumStaleStorages|FsLockQueueLength|ProvidedCapacityTotal|NumEncryptionZones|BlockDeletionStartTime|CurrentTokensCount|MaxObjects)$
       type: GAUSE
       name: $1
       labels:
@@ -83,3 +83,19 @@ rules:
       name: $1
       labels:
         type: $2
+
+  Hadoop:service=NameNode,name=RetryCache\.(\w+)$:
+    - pattern: ^(Cache)(.+)$
+      type: GAUSE
+      name: $2_$3
+      labels:
+        cache: $1
+        type: $3
+      help: "$2_$3 metrics of retry cache $1"
+
+  Hadoop:service=NameNode,name=(NameNodeStatus)$:
+    - pattern: ^(State)$
+      type: GAUSE
+      name: $2
+      mapping: hadoop_exporter.mapping.hastate
+      help: 'the high-available state reported by the NameNodeStatus bean: 0.0 => initializing, 1.0 => active, 2.0 => standby, 3.0 => stopping, 9999 => others'

@@ -16,12 +16,19 @@ rules:
         datadir: $2
         type: $4
 
-  Hadoop:service=DataNode,name=(FSDatasetState)$:
+  Hadoop:service=DataNode,name=(FSDatasetState)(?:-([a-zA-Z0-9-]+))?$:
     - pattern: ^((?!tag|modelerType|name).*)
       type: GAUSE
       name: $1
       labels:
-        type: $2
+        storage: $2
+        type: $3
+
+  Hadoop:service=DataNode,name=(DataNodeInfo)$:
+    - pattern: ^(XceiverCount|XmitsInProgress)$
+      type: GAUSE
+      name: $2
+      help: "$2 metric from DataNodeInfo"
 
   Hadoop:service=DataNode,name=(DataNodeActivity).*:
     - pattern: ^((?!tag|modelerType|name).*)

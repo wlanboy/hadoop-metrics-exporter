@@ -22,7 +22,14 @@ rules:
       labels:
         type: $3
       help: "$1 metrics"
-  
+
+    - pattern: ^(Log)(Fatal|Error|Warn|Info)$
+      type: GAUSE
+      name: $1_$2
+      labels:
+        level: $3
+      help: "Log message counters by level"
+
   Hadoop:service=.+,name=(RpcActivity)ForPort(\d+):
     - pattern: (.+)(NumOps|AvgTime)$
       type: GAUSE

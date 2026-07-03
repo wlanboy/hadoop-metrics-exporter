@@ -10,6 +10,8 @@ import java.util.Optional;
 import com.example.hadoopexporter.config.ExporterProperties;
 import com.example.hadoopexporter.jmx.JmxClient;
 import com.example.hadoopexporter.metrics.MetricFamily;
+import com.example.hadoopexporter.metrics.PrometheusTextFormatter;
+import com.example.hadoopexporter.metrics.collectors.DataNodeCollector;
 import com.example.hadoopexporter.metrics.collectors.NameNodeCollector;
 import com.example.hadoopexporter.rules.RuleSetLoader;
 import com.sun.net.httpserver.HttpServer;
@@ -74,6 +76,72 @@ class HadoopMetricCollectorTest {
 		assertThat(fsState.getLabelNames()).containsExactly("cluster", "host");
 		assertThat(fsState.getSamples()).hasSize(1);
 		assertThat(fsState.getSamples().get(0).value()).isEqualTo(0.0); // "Operational" -> 0.0
+
+		// common.yaml: JvmMetrics Log* counters (LogFatal/LogError/LogWarn/LogInfo)
+		MetricFamily jvmLog = family(families, "hadoop_hdfs_namenode_jvmmetrics_log");
+		assertThat(jvmLog.getSamples()).extracting(s -> s.labelValues().get(2)).containsExactlyInAnyOrder(
+				"Fatal", "Error", "Warn", "Info");
+		assertThat(jvmLog.getSamples().stream().filter(s -> s.labelValues().get(2).equals("Error")).findFirst()
+				.orElseThrow().value()).isEqualTo(1.0);
+
+		// namenode.yaml: RetryCache.NameNodeRetryCache bean's Cache* counters
+		MetricFamily cacheUpdated = family(families, "hadoop_hdfs_namenode_cache_updated");
+		assertThat(cacheUpdated.getLabelNames()).containsExactly("cluster", "host", "cache", "type");
+		assertThat(cacheUpdated.getSamples()).hasSize(1);
+		assertThat(cacheUpdated.getSamples().get(0).labelValues()).containsExactly(
+				"hadoop_test", "hdfs-nn", "NameNodeRetryCache", "Updated");
+		assertThat(cacheUpdated.getSamples().get(0).value()).isEqualTo(369375989.0);
+
+		// namenode.yaml: NameNodeStatus bean's State field (alternate HA-state source)
+		MetricFamily nnStatusState = family(families, "hadoop_hdfs_namenode_state");
+		assertThat(nnStatusState.getSamples()).hasSize(1);
+		assertThat(nnStatusState.getSamples().get(0).value()).isEqualTo(1.0); // "active" -> 1.0
+	}
+
+	@Test
+	void collectsDataNodeMetricsFromRealFixture() throws IOException {
+		byte[] body = Files.readAllBytes(Path.of("src/test/resources/fixtures/datanode.json"));
+		HttpServer dnServer = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+		dnServer.createContext("/jmx", exchange -> {
+			exchange.getResponseHeaders().add("Content-Type", "application/json");
+			exchange.sendResponseHeaders(200, body.length);
+			exchange.getResponseBody().write(body);
+			exchange.close();
+		});
+		dnServer.start();
+		try {
+			String dnUrl = "http://127.0.0.1:" + dnServer.getAddress().getPort() + "/jmx";
+			ExporterProperties properties = new ExporterProperties();
+			RuleSetLoader ruleSetLoader = new RuleSetLoader(properties);
+			JmxClient jmxClient = new JmxClient();
+
+			DataNodeCollector collector = new DataNodeCollector("hadoop_test", List.of(dnUrl), ruleSetLoader, jmxClient);
+			List<MetricFamily> families = collector.collect();
+
+			// datanode.yaml: DataNodeInfo's simple numeric fields
+			MetricFamily xceiverCount = family(families, "hadoop_hdfs_datanode_xceivercount");
+			assertThat(xceiverCount.getSamples()).hasSize(1);
+			assertThat(xceiverCount.getSamples().get(0).value()).isEqualTo(7.0);
+
+			// datanode.yaml: FSDatasetState (legacy, no suffix) and FSDatasetState-<uuid> (per-storage)
+			// must NOT collide into duplicate samples - "storage" label distinguishes them.
+			MetricFamily fsDatasetState = family(families, "hadoop_hdfs_datanode_fsdatasetstate");
+			assertThat(fsDatasetState.getLabelNames()).containsExactly("cluster", "host", "storage", "type");
+			long remainingSamples = fsDatasetState.getSamples().stream()
+					.filter(s -> s.labelValues().get(3).equals("Remaining")).count();
+			assertThat(remainingSamples).isEqualTo(2); // one per FSDatasetState bean instance
+			assertThat(fsDatasetState.getSamples().stream().map(s -> s.labelValues().get(2)).distinct().toList())
+					.containsExactlyInAnyOrder("", "89e557ec-9c1a-4b88-b00c-ca36106058f3");
+			// no two samples may share the exact same label set (would be invalid Prometheus output)
+			List<List<String>> labelSets = fsDatasetState.getSamples().stream()
+					.map(MetricFamily.Sample::labelValues).distinct().toList();
+			assertThat(labelSets).hasSameSizeAs(fsDatasetState.getSamples());
+
+			String text = PrometheusTextFormatter.format(families);
+			assertThat(text).contains("hadoop_hdfs_datanode_fsdatasetstate");
+		} finally {
+			dnServer.stop(0);
+		}
 	}
 
 	private static MetricFamily family(List<MetricFamily> families, String name) {
