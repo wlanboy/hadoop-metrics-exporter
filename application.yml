@@ -6,17 +6,15 @@ exporter:
   cluster-name: hadoop_cluster
   path: /metrics
   # metrics-dir: /exporter/metrics   # optional: override the classpath metrics/*.yaml rule directory
-  jmx: []
-    # - cluster: hadoop_prod
-    #   services:
-    #     namenode:
-    #       - http://nn1:9870/jmx
-    #     datanode:
-    #       - http://dn1:9864/jmx
-    #       - http://dn2:9864/jmx
-    #     resourcemanager:
-    #       - http://rm1:8088/jmx
-    #     nodemanager:
-    #       - http://nm1:8042/jmx
-    #     hiveserver2:
-    #       - http://hs2:10002/jmx
+  jmx:
+    - cluster: hadoop_cluster
+      services:
+        namenode:
+          - http://localhost:9870/jmx
+          - http://localhost:9871/jmx
+        datanode:
+          - http://localhost:9864/jmx
+        journalnode:
+          - http://localhost:8480/jmx
+          - http://localhost:8481/jmx
+          - http://localhost:8482/jmx
