@@ -5,9 +5,6 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 import com.example.hadoopexporter.config.ExporterProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,19 +32,8 @@ public class RuleSetLoader {
 		RuleSet serviceRules = readRuleFile(serviceName + ".yaml");
 		RuleSet commonRules = readRuleFile(COMMON_FILE);
 
-		RuleSet merged = new RuleSet();
-		merged.setLowercaseOutputName(serviceRules != null ? serviceRules.isLowercaseOutputName() : true);
-		merged.setLowercaseOutputLabel(serviceRules != null ? serviceRules.isLowercaseOutputLabel() : true);
-
-		Map<String, List<MetricRule>> rules = new LinkedHashMap<>();
-		if (serviceRules != null) {
-			rules.putAll(serviceRules.getRules());
-		}
-		if (commonRules != null) {
-			rules.putAll(commonRules.getRules());
-		}
-		merged.setRules(rules);
-		return merged;
+		RuleSet base = serviceRules != null ? serviceRules : new RuleSet();
+		return base.mergeWith(commonRules);
 	}
 
 	private RuleSet readRuleFile(String fileName) {

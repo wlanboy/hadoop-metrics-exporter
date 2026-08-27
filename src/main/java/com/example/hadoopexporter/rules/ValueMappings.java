@@ -1,4 +1,4 @@
-package com.example.hadoopexporter.metrics;
+package com.example.hadoopexporter.rules;
 
 import java.util.Map;
 import java.util.function.Function;

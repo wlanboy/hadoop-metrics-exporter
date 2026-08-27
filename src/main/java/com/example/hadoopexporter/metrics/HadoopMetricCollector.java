@@ -7,7 +7,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import com.example.hadoopexporter.jmx.JmxClient;
@@ -129,11 +128,11 @@ public abstract class HadoopMetricCollector {
 					}
 					Object metricValue = metricEntry.getValue();
 					for (MetricRule rule : ruleEntry.getValue()) {
-						if (!"GAUSE".equals(rule.getType())) {
+						if (!rule.isGauge()) {
 							log.warn("Metric type {} not supported currently", rule.getType());
 							continue;
 						}
-						if (!Pattern.compile(rule.getPattern()).matcher(metricName).lookingAt()) {
+						if (!rule.matchesMetricName(metricName)) {
 							continue;
 						}
 						applyRule(groupPattern, groupMetrics, rule, beanName, metricName, metricValue, commonLabels);
@@ -187,32 +186,11 @@ public abstract class HadoopMetricCollector {
 		}
 
 		try {
-			double resolvedValue = resolveValue(metricValue, rule.getMapping());
+			double resolvedValue = rule.resolveValue(metricValue);
 			family.addMetric(labelValues, resolvedValue);
 		} catch (Exception e) {
 			log.warn("Unparseable metric: {} - {} = {}", beanName, metricName, metricValue);
 		}
-	}
-
-	private static double resolveValue(Object value, String mapping) {
-		if (mapping != null && !mapping.isBlank()) {
-			Function<String, Double> fn = ValueMappings.resolve(mapping);
-			return fn.apply(String.valueOf(value));
-		}
-		return toDouble(value);
-	}
-
-	private static double toDouble(Object value) {
-		if (value instanceof Number n) {
-			return n.doubleValue();
-		}
-		if (value instanceof Boolean b) {
-			return b ? 1.0 : 0.0;
-		}
-		if (value instanceof String s) {
-			return Double.parseDouble(s);
-		}
-		throw new IllegalArgumentException("Cannot convert to number: " + value);
 	}
 
 	private static String stripTrailingSlash(String url) {
