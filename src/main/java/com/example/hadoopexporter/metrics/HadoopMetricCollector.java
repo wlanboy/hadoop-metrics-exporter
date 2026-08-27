@@ -38,15 +38,28 @@ public abstract class HadoopMetricCollector {
 	private final String prefix;
 	private final RuleSet ruleSet;
 	private final JmxClient jmxClient;
+	private final String jvmMetricsServiceTag;
 
 	protected HadoopMetricCollector(String cluster, List<String> urls, String component, String service,
 			RuleSetLoader ruleSetLoader, JmxClient jmxClient) {
+		this(cluster, urls, component, service, ruleSetLoader, jmxClient, null);
+	}
+
+	/**
+	 * @param jvmMetricsServiceTag the "service=" value of this service's JvmMetrics bean
+	 * (e.g. "NameNode"), used to populate the "host" common label from tag.Hostname; pass
+	 * null and override {@link #addServiceCommonLabels} directly if the service doesn't
+	 * follow that convention.
+	 */
+	protected HadoopMetricCollector(String cluster, List<String> urls, String component, String service,
+			RuleSetLoader ruleSetLoader, JmxClient jmxClient, String jvmMetricsServiceTag) {
 		this.log = LoggerFactory.getLogger(component + "." + service);
 		this.cluster = cluster;
 		this.urls = urls.stream().map(HadoopMetricCollector::stripTrailingSlash).toList();
 		this.prefix = "hadoop_" + component + "_" + service;
 		this.ruleSet = ruleSetLoader.loadForService(service);
 		this.jmxClient = jmxClient;
+		this.jvmMetricsServiceTag = jvmMetricsServiceTag;
 	}
 
 	public List<MetricFamily> collect() {
@@ -73,11 +86,16 @@ public abstract class HadoopMetricCollector {
 	}
 
 	/**
-	 * Override to append service-specific common labels (e.g. "host" resolved from the
-	 * service's JvmMetrics bean); the "cluster" label is already populated.
+	 * Override to append service-specific common labels; the "cluster" label is already
+	 * populated. The base implementation adds "host" from tag.Hostname of the
+	 * {@code Hadoop:service=<jvmMetricsServiceTag>,name=JvmMetrics} bean, if a
+	 * jvmMetricsServiceTag was supplied to the constructor.
 	 */
 	protected void addServiceCommonLabels(CommonLabels labels, List<Map<String, Object>> beans) {
-		// base implementation: nothing beyond "cluster"
+		if (jvmMetricsServiceTag != null) {
+			findBean(beans, "Hadoop:service=" + jvmMetricsServiceTag + ",name=JvmMetrics")
+					.ifPresent(bean -> labels.add("host", String.valueOf(bean.get("tag.Hostname"))));
+		}
 	}
 
 	protected static Optional<Map<String, Object>> findBean(List<Map<String, Object>> beans, String groupPattern) {
