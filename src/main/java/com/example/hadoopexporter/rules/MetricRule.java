@@ -12,8 +12,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class MetricRule {
 
-	/** The only metric type currently supported; matches the rule files' "type: GAUSE" value. */
-	private static final String GAUGE_TYPE = "GAUSE";
+	/** Metric types recognized by the exporter; only GAUGE is currently supported. */
+	public enum MetricType {
+		/** Matches the rule files' "type: GAUSE" value. */
+		GAUGE
+	}
+
+	private static final String GAUGE_RAW_VALUE = "GAUSE";
 
 	private String pattern;
 	private String type;
@@ -23,9 +28,11 @@ public class MetricRule {
 	private String mapping;
 
 	private Pattern compiledPattern;
+	private MetricType metricType;
+	private ValueMapping resolvedMapping;
 
 	public boolean isGauge() {
-		return GAUGE_TYPE.equals(type);
+		return metricType == MetricType.GAUGE;
 	}
 
 	/** Whether this rule's pattern matches (from the start of) the given metric field name. */
@@ -35,8 +42,8 @@ public class MetricRule {
 
 	/** Resolves a raw JMX metric value to a double, applying this rule's mapping function if set. */
 	public double resolveValue(Object metricValue) {
-		if (mapping != null && !mapping.isBlank()) {
-			return ValueMappings.resolve(mapping).apply(String.valueOf(metricValue));
+		if (resolvedMapping != null) {
+			return resolvedMapping.apply(String.valueOf(metricValue));
 		}
 		return toDouble(metricValue);
 	}
@@ -76,6 +83,7 @@ public class MetricRule {
 
 	public void setType(String type) {
 		this.type = type;
+		this.metricType = GAUGE_RAW_VALUE.equals(type) ? MetricType.GAUGE : null;
 	}
 
 	public String getName() {
@@ -109,5 +117,6 @@ public class MetricRule {
 	@JsonProperty("mapping")
 	public void setMapping(String mapping) {
 		this.mapping = mapping;
+		this.resolvedMapping = (mapping != null && !mapping.isBlank()) ? ValueMapping.parse(mapping) : null;
 	}
 }
