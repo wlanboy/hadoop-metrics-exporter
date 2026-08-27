@@ -31,6 +31,20 @@ rules:
       help: "$2 metric from DataNodeInfo"
 
   Hadoop:service=DataNode,name=(DataNodeActivity).*:
+    # Hadoop's DataNodeActivity MBean spells these two fields inconsistently across
+    # versions (NumBlocksFailedToUnCache/NumBlocksFailedToUncache and
+    # LastDirScannerFinishTime/LastDirectoryScannerFinishTime). Normalize both spellings
+    # to one metric name so they don't split into separate series.
+    - pattern: ^(NumBlocksFailedToUnCache|NumBlocksFailedToUncache)$
+      type: GAUSE
+      name: NumBlocksFailedToUncache
+      labels:
+        type: $2
+    - pattern: ^(LastDirScannerFinishTime|LastDirectoryScannerFinishTime)$
+      type: GAUSE
+      name: LastDirScannerFinishTime
+      labels:
+        type: $2
     - pattern: ^((?!tag|modelerType|name).*)
       type: GAUSE
       name: $1
