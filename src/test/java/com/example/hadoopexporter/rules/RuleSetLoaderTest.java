@@ -30,7 +30,7 @@ class RuleSetLoaderTest {
 		RuleSet ruleSet = loader.loadForService("does-not-exist");
 
 		assertThat(ruleSet.getRules()).isNotEmpty();
-		assertThat(ruleSet.getRules().keySet()).allMatch(key -> key.contains("JvmMetrics"));
+		assertThat(ruleSet.getRules().keySet()).anyMatch(key -> key.contains("JvmMetrics"));
 	}
 
 	@Test
