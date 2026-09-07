@@ -3,7 +3,7 @@ lowercaseOutputLabel: false
 rules:
   Hadoop:service=ResourceManager,name=(QueueMetrics),q0=(\w+)$:
     - pattern: ^(running)_(\d+)$
-      type: GAUSE
+      type: GAUGE
       name: $1_$3
       labels:
         queue0: $2
@@ -11,7 +11,7 @@ rules:
       help: 'Current number of running applications based on type. See https://hadoop.apache.org/docs/r2.7.2/hadoop-project-dist/hadoop-common/Metrics.html#QueueMetrics to more details'
 
     - pattern: (.+)(Containers)$
-      type: GAUSE
+      type: GAUGE
       name: $1_$4
       labels:
         queue0: $2
@@ -19,7 +19,7 @@ rules:
       help: 'Current number of containers are on the type'
 
     - pattern: (.+)(VCores)$
-      type: GAUSE
+      type: GAUGE
       name: $1_$4
       labels:
         queue0: $2
@@ -27,7 +27,7 @@ rules:
       help: 'Current cpu resource in virtual cores of type'
 
     - pattern: (.+)(MB)$
-      type: GAUSE
+      type: GAUGE
       name: $1_$4
       labels:
         queue0: $2
@@ -35,7 +35,7 @@ rules:
       help: 'Current memory resource in MB of type'
 
     - pattern: ^(Apps)(.+)
-      type: GAUSE
+      type: GAUGE
       name: $1_$3
       labels:
         queue0: $2
@@ -43,7 +43,7 @@ rules:
       help: 'Current number of applications are on the type'
 
     - pattern: ^((?!tag|modelerType|name).*)
-      type: GAUSE
+      type: GAUGE
       name: $1
       labels:
         queue0: $2
@@ -51,7 +51,7 @@ rules:
 
   Hadoop:service=ResourceManager,name=(QueueMetrics),q0=(\w+),q1=(\w+)$:
     - pattern: ^(running)_(\d+)$
-      type: GAUSE
+      type: GAUGE
       name: $1_$4
       labels:
         queue0: $2
@@ -60,7 +60,7 @@ rules:
       help: 'Current number of running applications based on type. See https://hadoop.apache.org/docs/r3.3.0/hadoop-project-dist/hadoop-common/Metrics.html#QueueMetrics to more details'
 
     - pattern: (.+)(Containers)$
-      type: GAUSE
+      type: GAUGE
       name: $1_$5
       labels:
         queue0: $2
@@ -69,7 +69,7 @@ rules:
       help: 'Current number of containers are on the type'
 
     - pattern: (.+)(VCores)$
-      type: GAUSE
+      type: GAUGE
       name: $1_$5
       labels:
         queue0: $2
@@ -78,7 +78,7 @@ rules:
       help: 'Current cpu resource in virtual cores of type'
 
     - pattern: (.+)(MB)$
-      type: GAUSE
+      type: GAUGE
       name: $1_$5
       labels:
         queue0: $2
@@ -87,7 +87,7 @@ rules:
       help: 'Current memory resource in MB of type'
 
     - pattern: ^(Apps)(.+)
-      type: GAUSE
+      type: GAUGE
       name: $1_$4
       labels:
         queue0: $2
@@ -96,7 +96,7 @@ rules:
       help: 'Current number of applications are on the type'
 
     - pattern: ^((?!tag|modelerType|name).*)
-      type: GAUSE
+      type: GAUGE
       name: $1
       labels:
         queue0: $2
@@ -105,28 +105,28 @@ rules:
 
   Hadoop:service=ResourceManager,name=(CapacitySchedulerMetrics)$:
     - pattern: (.+)(NumOps|AvgTime)$
-      type: GAUSE
+      type: GAUGE
       name: $1_$3
       labels:
         type: $2
 
   Hadoop:service=ResourceManager,name=(ClusterMetrics)$:
     - pattern: ^(Num)(.+)(NMs)$
-      type: GAUSE
+      type: GAUGE
       name: $1_$2_$4
       labels:
         type: $3
       help: 'number of the node managers is in the particular states'
 
     - pattern: (.+)(NumOps|AvgTime)$
-      type: GAUSE
+      type: GAUGE
       name: $1_$3
       labels:
         type: $2
 
   Hadoop:service=ResourceManager,name=RMInfo:
     - pattern: (State)
-      type: GAUSE
+      type: GAUGE
       name: $1
       mapping: hadoop_exporter.mapping.rmstate
       help: 'the high-available state of resourcemanager: 0.0 => initializing, 1.0 => active, 2.0 => standby, 3.0 => stopping, 9999 => others'

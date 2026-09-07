@@ -4,13 +4,13 @@ lowercaseOutputLabel: false
 rules:
   Hadoop:service=DataNode,name=(DataNodeVolume)-(.+):
     - pattern: (.+)(NumOps|AvgTime)
-      type: GAUSE
+      type: GAUGE
       name: $1_$4
       labels:
         datadir: $2
         type: $3
     - pattern: ^(Total)(.+)
-      type: GAUSE
+      type: GAUGE
       name: $1_$3
       labels:
         datadir: $2
@@ -18,7 +18,7 @@ rules:
 
   Hadoop:service=DataNode,name=(FSDatasetState)(?:-([a-zA-Z0-9-]+))?$:
     - pattern: ^((?!tag|modelerType|name|FailedStorageLocations|StorageInfo).*)
-      type: GAUSE
+      type: GAUGE
       name: $1
       labels:
         storage: $2
@@ -26,7 +26,7 @@ rules:
 
   Hadoop:service=DataNode,name=(DataNodeInfo)$:
     - pattern: ^(XceiverCount|XmitsInProgress)$
-      type: GAUSE
+      type: GAUGE
       name: $2
       help: "$2 metric from DataNodeInfo"
 
@@ -36,17 +36,17 @@ rules:
     # LastDirScannerFinishTime/LastDirectoryScannerFinishTime). Normalize both spellings
     # to one metric name so they don't split into separate series.
     - pattern: ^(NumBlocksFailedToUnCache|NumBlocksFailedToUncache)$
-      type: GAUSE
+      type: GAUGE
       name: NumBlocksFailedToUncache
       labels:
         type: $2
     - pattern: ^(LastDirScannerFinishTime|LastDirectoryScannerFinishTime)$
-      type: GAUSE
+      type: GAUGE
       name: LastDirScannerFinishTime
       labels:
         type: $2
     - pattern: ^((?!tag|modelerType|name).*)
-      type: GAUSE
+      type: GAUGE
       name: $1
       labels:
         type: $2

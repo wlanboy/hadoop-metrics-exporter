@@ -4,89 +4,89 @@ lowercaseOutputLabel: false
 rules:
   Hadoop:service=NameNode,name=(NameNodeInfo)$:
     - pattern: ^(Total|Used|Free|NonDfsUsedSpace|Percent.+|Cache.+|CorruptFilesCount|Threads)$
-      type: GAUSE
+      type: GAUGE
       name: $1
       labels:
         type: $2
 
   Hadoop:service=NameNode,name=(FSNamesystem)$:
     - pattern: ^(Capacity)(.+)
-      type: GAUSE
+      type: GAUGE
       name: $1_$2
       labels:
         type: $3
 
     - pattern: ^(\w+)(Blocks)$
-      type: GAUSE
+      type: GAUGE
       name: $1_$3
       labels:
         type: $2
     
     - pattern: ^(Num)(.+)(DataNodes)$
-      type: GAUSE
+      type: GAUGE
       name: $1_$2_$4
       labels:
         type: $3
 
     - pattern: ^(TotalLoad|BlocksTotal|FilesTotal|TotalSyncCount|NumActiveClients|NumFilesUnderConstruction|NumStaleStorages|ExpiredHeartbeats|LockQueueLength|StaleDataNodes)$
-      type: GAUSE
+      type: GAUGE
       name: $1
       labels:
         type: $2
 
     - pattern: ^(Transactions\w+|Last\w+|MillisSinceLastLoadedEdits)$
-      type: GAUSE
+      type: GAUGE
       name: $1
       labels:
         type: $2
 
     - pattern: .*(HAState)$
-      type: GAUSE
+      type: GAUGE
       name: $2
       mapping: hadoop_exporter.mapping.hastate
       help: 'the high-available state of namenodes: 0.0 => initializing, 1.0 => active, 2.0 => standby, 3.0 => stopping, 9999 => others'
 
   Hadoop:service=NameNode,name=(FSNamesystemState)$:
     - pattern: ^(Capacity)(.+)
-      type: GAUSE
+      type: GAUGE
       name: $1_$2
       labels:
         type: $3
 
     - pattern: ^(Num)(.+)(DataNodes)$
-      type: GAUSE
+      type: GAUGE
       name: $1_$2_$4
       labels:
         type: $3
 
     - pattern: ^(\w+)(Blocks)$
-      type: GAUSE
+      type: GAUGE
       name: $1_$3
       labels:
         type: $2
 
     - pattern: ^(TotalLoad|BlocksTotal|FilesTotal|TotalSyncCount|VolumeFailuresTotal|EstimatedCapacityLostTotal|NumStaleStorages|FsLockQueueLength|ProvidedCapacityTotal|NumEncryptionZones|BlockDeletionStartTime|CurrentTokensCount|MaxObjects)$
-      type: GAUSE
+      type: GAUGE
       name: $1
       labels:
         type: $2
 
     - pattern: (FSState)
-      type: GAUSE
+      type: GAUGE
       name: $2
       mapping: hadoop_exporter.mapping.fsstate
       help: 'the fs state of namenode: 0.0 => Operational, 1.0 => Safemode, 9999 => others'
 
   Hadoop:service=NameNode,name=(NameNodeActivity)$:
     - pattern: ^((?!tag|modelerType|name).*)
-      type: GAUSE
+      type: GAUGE
       name: $1
       labels:
         type: $2
 
   Hadoop:service=NameNode,name=RetryCache\.(\w+)$:
     - pattern: ^(Cache)(.+)$
-      type: GAUSE
+      type: GAUGE
       name: $2_$3
       labels:
         cache: $1
@@ -95,7 +95,7 @@ rules:
 
   Hadoop:service=NameNode,name=(NameNodeStatus)$:
     - pattern: ^(State)$
-      type: GAUSE
+      type: GAUGE
       name: $2
       mapping: hadoop_exporter.mapping.hastate
       help: 'the high-available state reported by the NameNodeStatus bean: 0.0 => initializing, 1.0 => active, 2.0 => standby, 3.0 => stopping, 9999 => others'

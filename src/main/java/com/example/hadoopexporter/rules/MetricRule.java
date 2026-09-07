@@ -14,11 +14,11 @@ public class MetricRule {
 
 	/** Metric types recognized by the exporter; only GAUGE is currently supported. */
 	public enum MetricType {
-		/** Matches the rule files' "type: GAUSE" value. */
+		/** Matches the rule files' "type: GAUGE" value. */
 		GAUGE
 	}
 
-	private static final String GAUGE_RAW_VALUE = "GAUSE";
+	private static final String GAUGE_RAW_VALUE = "GAUGE";
 
 	private String pattern;
 	private String type;

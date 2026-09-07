@@ -39,7 +39,7 @@ class HadoopMetricCollectorUnitTest {
 	private MetricRule rule(String pattern, String name, Map<String, String> labels, String help) {
 		MetricRule rule = new MetricRule();
 		rule.setPattern(pattern);
-		rule.setType("GAUSE");
+		rule.setType("GAUGE");
 		rule.setName(name);
 		rule.setLabels(labels);
 		rule.setHelp(help);

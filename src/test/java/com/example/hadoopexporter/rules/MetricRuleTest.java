@@ -8,11 +8,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class MetricRuleTest {
 
 	@Test
-	void isGaugeIsTrueOnlyForGauseType() {
+	void isGaugeIsTrueOnlyForGAUGEType() {
 		MetricRule rule = new MetricRule();
 		assertThat(rule.isGauge()).isFalse();
 
-		rule.setType("GAUSE");
+		rule.setType("GAUGE");
 		assertThat(rule.isGauge()).isTrue();
 
 		rule.setType("COUNTER");

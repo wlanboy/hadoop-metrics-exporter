@@ -40,7 +40,7 @@ class RuleSetLoaderTest {
 				rules:
 				  "^MyBean$":
 				    - pattern: "^MyMetric$"
-				      type: GAUSE
+				      type: GAUGE
 				      name: "my_metric"
 				""");
 
