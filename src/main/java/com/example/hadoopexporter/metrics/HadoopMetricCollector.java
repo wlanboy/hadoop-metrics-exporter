@@ -35,6 +35,7 @@ public abstract class HadoopMetricCollector {
 	private final String cluster;
 	private final List<String> urls;
 	private final String prefix;
+	private final String service;
 	private final RuleSet ruleSet;
 	private final JmxClient jmxClient;
 	private final String jvmMetricsServiceTag;
@@ -56,6 +57,7 @@ public abstract class HadoopMetricCollector {
 		this.cluster = cluster;
 		this.urls = urls.stream().map(HadoopMetricCollector::stripTrailingSlash).toList();
 		this.prefix = "hadoop_" + component + "_" + service;
+		this.service = service;
 		this.ruleSet = ruleSetLoader.loadForService(service);
 		this.jmxClient = jmxClient;
 		this.jvmMetricsServiceTag = jvmMetricsServiceTag;
@@ -72,6 +74,7 @@ public abstract class HadoopMetricCollector {
 
 			CommonLabels commonLabels = new CommonLabels();
 			commonLabels.add("cluster", cluster);
+			commonLabels.add("node_type", service);
 			addServiceCommonLabels(commonLabels, beans);
 
 			convertMetrics(beans, commonLabels, metrics);

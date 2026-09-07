@@ -61,35 +61,36 @@ class HadoopMetricCollectorTest {
 		// combined pattern group1 is the constant "JvmMetrics" capture, so the family name embeds it.
 		MetricFamily memFamily = family(families, "hadoop_hdfs_namenode_jvmmetrics_mem");
 		assertThat(memFamily.getHelp()).isEqualTo("JvmMetrics metrics");
-		assertThat(memFamily.getLabelNames()).containsExactly("cluster", "host", "type");
-		assertThat(memFamily.getSamples()).extracting(s -> s.labelValues().get(2))
+		assertThat(memFamily.getLabelNames()).containsExactly("cluster", "node_type", "host", "type");
+		assertThat(memFamily.getSamples()).extracting(s -> s.labelValues().get(3))
 				.contains("HeapUsedM", "NonHeapUsedM", "MaxM");
 		assertThat(memFamily.getSamples().stream()
-				.filter(s -> s.labelValues().get(2).equals("HeapUsedM")).findFirst().orElseThrow().value())
+				.filter(s -> s.labelValues().get(3).equals("HeapUsedM")).findFirst().orElseThrow().value())
 				.isEqualTo(270.78455);
-		// common labels: "cluster" from config, "host" resolved from the JvmMetrics bean's tag.Hostname
+		// common labels: "cluster" from config, "node_type" identifying the service, "host" resolved from the JvmMetrics bean's tag.Hostname
 		assertThat(memFamily.getSamples().get(0).labelValues().get(0)).isEqualTo("hadoop_test");
-		assertThat(memFamily.getSamples().get(0).labelValues().get(1)).isEqualTo("hdfs-nn");
+		assertThat(memFamily.getSamples().get(0).labelValues().get(1)).isEqualTo("namenode");
+		assertThat(memFamily.getSamples().get(0).labelValues().get(2)).isEqualTo("hdfs-nn");
 
 		// namenode.yaml: FSNamesystemState's FSState field, mapped via hadoop_exporter.mapping.fsstate
 		MetricFamily fsState = family(families, "hadoop_hdfs_namenode_fsstate");
-		assertThat(fsState.getLabelNames()).containsExactly("cluster", "host");
+		assertThat(fsState.getLabelNames()).containsExactly("cluster", "node_type", "host");
 		assertThat(fsState.getSamples()).hasSize(1);
 		assertThat(fsState.getSamples().get(0).value()).isEqualTo(0.0); // "Operational" -> 0.0
 
 		// common.yaml: JvmMetrics Log* counters (LogFatal/LogError/LogWarn/LogInfo)
 		MetricFamily jvmLog = family(families, "hadoop_hdfs_namenode_jvmmetrics_log");
-		assertThat(jvmLog.getSamples()).extracting(s -> s.labelValues().get(2)).containsExactlyInAnyOrder(
+		assertThat(jvmLog.getSamples()).extracting(s -> s.labelValues().get(3)).containsExactlyInAnyOrder(
 				"Fatal", "Error", "Warn", "Info");
-		assertThat(jvmLog.getSamples().stream().filter(s -> s.labelValues().get(2).equals("Error")).findFirst()
+		assertThat(jvmLog.getSamples().stream().filter(s -> s.labelValues().get(3).equals("Error")).findFirst()
 				.orElseThrow().value()).isEqualTo(1.0);
 
 		// namenode.yaml: RetryCache.NameNodeRetryCache bean's Cache* counters
 		MetricFamily cacheUpdated = family(families, "hadoop_hdfs_namenode_cache_updated");
-		assertThat(cacheUpdated.getLabelNames()).containsExactly("cluster", "host", "cache", "type");
+		assertThat(cacheUpdated.getLabelNames()).containsExactly("cluster", "node_type", "host", "cache", "type");
 		assertThat(cacheUpdated.getSamples()).hasSize(1);
 		assertThat(cacheUpdated.getSamples().get(0).labelValues()).containsExactly(
-				"hadoop_test", "hdfs-nn", "NameNodeRetryCache", "Updated");
+				"hadoop_test", "namenode", "hdfs-nn", "NameNodeRetryCache", "Updated");
 		assertThat(cacheUpdated.getSamples().get(0).value()).isEqualTo(369375989.0);
 
 		// namenode.yaml: NameNodeStatus bean's State field (alternate HA-state source)
@@ -126,11 +127,11 @@ class HadoopMetricCollectorTest {
 			// datanode.yaml: FSDatasetState (legacy, no suffix) and FSDatasetState-<uuid> (per-storage)
 			// must NOT collide into duplicate samples - "storage" label distinguishes them.
 			MetricFamily fsDatasetState = family(families, "hadoop_hdfs_datanode_fsdatasetstate");
-			assertThat(fsDatasetState.getLabelNames()).containsExactly("cluster", "host", "storage", "type");
+			assertThat(fsDatasetState.getLabelNames()).containsExactly("cluster", "node_type", "host", "storage", "type");
 			long remainingSamples = fsDatasetState.getSamples().stream()
-					.filter(s -> s.labelValues().get(3).equals("Remaining")).count();
+					.filter(s -> s.labelValues().get(4).equals("Remaining")).count();
 			assertThat(remainingSamples).isEqualTo(2); // one per FSDatasetState bean instance
-			assertThat(fsDatasetState.getSamples().stream().map(s -> s.labelValues().get(2)).distinct().toList())
+			assertThat(fsDatasetState.getSamples().stream().map(s -> s.labelValues().get(3)).distinct().toList())
 					.containsExactlyInAnyOrder("", "89e557ec-9c1a-4b88-b00c-ca36106058f3");
 			// no two samples may share the exact same label set (would be invalid Prometheus output)
 			List<List<String>> labelSets = fsDatasetState.getSamples().stream()

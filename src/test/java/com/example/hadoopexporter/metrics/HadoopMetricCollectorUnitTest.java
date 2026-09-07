@@ -66,9 +66,9 @@ class HadoopMetricCollectorUnitTest {
 		MetricFamily family = families.get(0);
 		assertThat(family.getName()).isEqualTo("hadoop_test_service_foo_bar");
 		assertThat(family.getHelp()).isEqualTo("Foo metrics");
-		assertThat(family.getLabelNames()).containsExactly("cluster");
+		assertThat(family.getLabelNames()).containsExactly("cluster", "node_type");
 		assertThat(family.getSamples()).hasSize(1);
-		assertThat(family.getSamples().get(0).labelValues()).containsExactly("hadoop_test");
+		assertThat(family.getSamples().get(0).labelValues()).containsExactly("hadoop_test", "service");
 		assertThat(family.getSamples().get(0).value()).isEqualTo(42.0);
 	}
 
@@ -179,8 +179,8 @@ class HadoopMetricCollectorUnitTest {
 		List<MetricFamily> families = collector.collect();
 
 		MetricFamily family = families.get(0);
-		assertThat(family.getLabelNames()).containsExactly("cluster", "host");
-		assertThat(family.getSamples().get(0).labelValues()).containsExactly("hadoop_test", "node-1");
+		assertThat(family.getLabelNames()).containsExactly("cluster", "node_type", "host");
+		assertThat(family.getSamples().get(0).labelValues()).containsExactly("hadoop_test", "service", "node-1");
 	}
 
 	@Test
@@ -215,6 +215,6 @@ class HadoopMetricCollectorUnitTest {
 		MetricFamily family = collector.collect().get(0);
 
 		assertThat(family.getName()).isEqualTo("hadoop_test_service_foo_bar");
-		assertThat(family.getLabelNames()).containsExactly("cluster", "kind");
+		assertThat(family.getLabelNames()).containsExactly("cluster", "node_type", "kind");
 	}
 }
