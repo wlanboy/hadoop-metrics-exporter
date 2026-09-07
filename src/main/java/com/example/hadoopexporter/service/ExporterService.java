@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.regex.Pattern;
 
 import com.example.hadoopexporter.config.ExporterProperties;
 import com.example.hadoopexporter.jmx.JmxClient;
@@ -25,6 +26,8 @@ import org.springframework.stereotype.Service;
  * Builds one HadoopMetricCollector per (cluster, service) entry in exporter.jmx, mirroring
  * hadoop_exporter.exporter.Exporter's Service/COLLECTOR_MAPPING wiring, and drives them
  * on every /metrics scrape (each collector fetches JMX synchronously, like the original).
+ * Metric families whose final name matches one of exporter.excluded-metrics are dropped
+ * from the result before it reaches the scrape endpoint.
  */
 @Service
 public class ExporterService {
@@ -32,8 +35,12 @@ public class ExporterService {
 	private static final Logger log = LoggerFactory.getLogger(ExporterService.class);
 
 	private final List<HadoopMetricCollector> collectors = new ArrayList<>();
+	private final List<Pattern> excludedMetricPatterns = new ArrayList<>();
 
 	public ExporterService(ExporterProperties properties, RuleSetLoader ruleSetLoader, JmxClient jmxClient) {
+		for (String excludedMetric : properties.getExcludedMetrics()) {
+			excludedMetricPatterns.add(Pattern.compile(excludedMetric));
+		}
 		Map<String, BiFunction<String, List<String>, HadoopMetricCollector>> factories = Map.of(
 				"namenode", (cluster, urls) -> new NameNodeCollector(cluster, urls, ruleSetLoader, jmxClient),
 				"datanode", (cluster, urls) -> new DataNodeCollector(cluster, urls, ruleSetLoader, jmxClient),
@@ -66,8 +73,21 @@ public class ExporterService {
 	public List<MetricFamily> collectAll() {
 		List<MetricFamily> result = new ArrayList<>();
 		for (HadoopMetricCollector collector : collectors) {
-			result.addAll(collector.collect());
+			for (MetricFamily family : collector.collect()) {
+				if (!isExcluded(family.getName())) {
+					result.add(family);
+				}
+			}
 		}
 		return result;
+	}
+
+	private boolean isExcluded(String metricName) {
+		for (Pattern pattern : excludedMetricPatterns) {
+			if (pattern.matcher(metricName).matches()) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

@@ -17,6 +17,7 @@ public class ExporterProperties {
 	private String path = "/metrics";
 	private String metricsDir;
 	private List<ClusterJmx> jmx = new ArrayList<>();
+	private List<String> excludedMetrics = new ArrayList<>();
 
 	public String getClusterName() {
 		return clusterName;
@@ -48,6 +49,15 @@ public class ExporterProperties {
 
 	public void setJmx(List<ClusterJmx> jmx) {
 		this.jmx = jmx;
+	}
+
+	/** Regex patterns matched (full match) against a metric's final, prefixed name to drop it from scrape output. */
+	public List<String> getExcludedMetrics() {
+		return excludedMetrics;
+	}
+
+	public void setExcludedMetrics(List<String> excludedMetrics) {
+		this.excludedMetrics = excludedMetrics;
 	}
 
 	public static class ClusterJmx {

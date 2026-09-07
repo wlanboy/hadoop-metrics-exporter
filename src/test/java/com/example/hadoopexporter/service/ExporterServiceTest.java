@@ -1,10 +1,13 @@
 package com.example.hadoopexporter.service;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.example.hadoopexporter.config.ExporterProperties;
 import com.example.hadoopexporter.jmx.JmxClient;
+import com.example.hadoopexporter.metrics.MetricFamily;
+import com.example.hadoopexporter.rules.MetricRule;
 import com.example.hadoopexporter.rules.RuleSet;
 import com.example.hadoopexporter.rules.RuleSetLoader;
 import org.junit.jupiter.api.Test;
@@ -89,5 +92,71 @@ class ExporterServiceTest {
 		assertThat(service.collectAll()).isEmpty();
 		verify(ruleSetLoader, never()).loadForService(anyString());
 		verify(jmxClient, never()).getBeans(anyString());
+	}
+
+	private RuleSet ruleSetWithFooBarMetric() {
+		MetricRule rule = new MetricRule();
+		rule.setPattern("^Foo(.+)$");
+		rule.setType("GAUGE");
+		rule.setName("foo_$1");
+		rule.setLabels(Map.of());
+		Map<String, List<MetricRule>> rules = new LinkedHashMap<>();
+		rules.put("^MyBean$", List.of(rule));
+		RuleSet ruleSet = new RuleSet();
+		ruleSet.setRules(rules);
+		return ruleSet;
+	}
+
+	private ExporterProperties propertiesWithOneDatanode(List<String> excludedMetrics) {
+		ExporterProperties properties = new ExporterProperties();
+		ExporterProperties.ClusterJmx clusterJmx = new ExporterProperties.ClusterJmx();
+		clusterJmx.setCluster("prod");
+		clusterJmx.setServices(Map.of("datanode", List.of("http://dn1/jmx")));
+		properties.setJmx(List.of(clusterJmx));
+		properties.setExcludedMetrics(excludedMetrics);
+		return properties;
+	}
+
+	@Test
+	void metricFamiliesMatchingAnExcludedMetricsPatternAreDroppedFromCollectAll() {
+		when(ruleSetLoader.loadForService("datanode")).thenReturn(ruleSetWithFooBarMetric());
+		Map<String, Object> bean = new LinkedHashMap<>();
+		bean.put("name", "MyBean");
+		bean.put("FooBar", 1);
+		when(jmxClient.getBeans(anyString())).thenReturn(List.of(bean));
+
+		ExporterProperties properties = propertiesWithOneDatanode(List.of("hadoop_hdfs_datanode_foo_bar"));
+		ExporterService service = new ExporterService(properties, ruleSetLoader, jmxClient);
+
+		assertThat(service.collectAll()).isEmpty();
+	}
+
+	@Test
+	void excludedMetricsPatternsAreFullMatchNotSubstring() {
+		when(ruleSetLoader.loadForService("datanode")).thenReturn(ruleSetWithFooBarMetric());
+		Map<String, Object> bean = new LinkedHashMap<>();
+		bean.put("name", "MyBean");
+		bean.put("FooBar", 1);
+		when(jmxClient.getBeans(anyString())).thenReturn(List.of(bean));
+
+		// "foo_bar" is a substring of the metric name but not a full match, so it must not exclude it.
+		ExporterProperties properties = propertiesWithOneDatanode(List.of("foo_bar"));
+		ExporterService service = new ExporterService(properties, ruleSetLoader, jmxClient);
+
+		assertThat(service.collectAll()).extracting(MetricFamily::getName).containsExactly("hadoop_hdfs_datanode_foo_bar");
+	}
+
+	@Test
+	void excludedMetricsPatternSupportsWildcardsAcrossAWholeServicePrefix() {
+		when(ruleSetLoader.loadForService("datanode")).thenReturn(ruleSetWithFooBarMetric());
+		Map<String, Object> bean = new LinkedHashMap<>();
+		bean.put("name", "MyBean");
+		bean.put("FooBar", 1);
+		when(jmxClient.getBeans(anyString())).thenReturn(List.of(bean));
+
+		ExporterProperties properties = propertiesWithOneDatanode(List.of("hadoop_hdfs_datanode_.*"));
+		ExporterService service = new ExporterService(properties, ruleSetLoader, jmxClient);
+
+		assertThat(service.collectAll()).isEmpty();
 	}
 }

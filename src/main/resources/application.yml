@@ -38,3 +38,7 @@ management:
     #       - http://nm1:8042/jmx
     #     hiveserver2:
     #       - http://hs2:10002/jmx
+  # excluded-metrics: []   # optional: regex patterns (full match) against the final metric
+    # name (e.g. "hadoop_datanode_datanodeinfo_xceivercount") to drop from scrape output
+    # - hadoop_datanode_datanodevolume_.*
+    # - hadoop_.*_totaltime
